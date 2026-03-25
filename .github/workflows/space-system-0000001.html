@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>James Webb Space Telescope - Live Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a2a 0%, #000000 100%);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* Animated Stars Background */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #ffd700, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #aaa;
+            font-size: 1.1em;
+        }
+
+        .live-badge {
+            display: inline-block;
+            background: #ff3333;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .card h2 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #ffd700;
+            border-left: 3px solid #ffd700;
+            padding-left: 15px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .info-value {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+        }
+
+        /* Webb 3D Model Container */
+        .webb-canvas {
+            text-align: center;
+            background: rgba(0,0,0,0.5);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            background: transparent;
+        }
+
+        /* Status Indicators */
+        .status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: statusPulse 1.5s infinite;
+        }
+
+        .status.online {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 15px;
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <div class="container">
+        <header>
+            <h1>🔭 James Webb Space Telescope</h1>
+            <div class="subtitle">Live Telemetry & Real-Time Tracking</div>
+            <div class="live-badge">
+                <span class="status online"></span>
+                LIVE DATA STREAM
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Telemetry Card -->
+            <div class="card">
+                <h2>🛰️ Telemetry Data</h2>
+                <div class="info-row">
+                    <span class="info-label">Distance from Earth:</span>
+                    <span class="info-value" id="distance">1,500,000 km</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Orbit Speed:</span>
+                    <span class="info-value" id="speed">0.28 km/s</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Temperature (Hot Side):</span>
+                    <span class="info-value" id="tempHot">85°C</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Temperature (Cold Side):</span>
+                    <span class="info-value" id="tempCold">-233°C</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Sunshield Status:</span>
+                    <span class="info-value" id="shield">✓ Fully Deployed</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Communication:</span>
+                    <span class="info-value" id="comms">Active - 100%</span>
+                </div>
+            </div>
+
+            <!-- Position Card -->
+            <div class="card">
+                <h2>📍 Current Position</h2>
+                <div class="info-row">
+                    <span class="info-label">Lagrange Point:</span>
+                    <span class="info-value">L2 (Sun-Earth)</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">RA (J2000):</span>
+                    <span class="info-value" id="ra">--:--:--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Dec (J2000):</span>
+                    <span class="info-value" id="dec">--° --' --"</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Altitude:</span>
+                    <span class="info-value" id="alt">--°</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Azimuth:</span>
+                    <span class="info-value" id="az">--°</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Solar Angle:</span>
+                    <span class="info-value" id="solarAngle">--°</span>
+                </div>
+            </div>
+
+            <!-- Instruments Card -->
+            <div class="card">
+                <h2>🔬 Instruments Status</h2>
+                <div class="info-row">
+                    <span class="info-label">NIRCam:</span>
+                    <span class="info-value" id="nircam">Operational</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">NIRSpec:</span>
+                    <span class="info-value" id="nirspec">Operational</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">MIRI:</span>
+                    <span class="info-value" id="miri">Operational</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">FGS/NIRISS:</span>
+                    <span class="info-value" id="fgs">Operational</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Data Rate:</span>
+                    <span class="info-value" id="dataRate">28.6 Mbps</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Last Update:</span>
+                    <span class="info-value" id="lastUpdate">--:--:--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Webb 3D Visualization -->
+        <div class="card" style="margin-top: 25px;">
+            <h2>🎨 James Webb 3D Visualization</h2>
+            <div class="webb-canvas">
+                <canvas id="webbCanvas" width="800" height="400" style="width:100%; height:auto; max-width:800px;"></canvas>
+                <p style="margin-top: 15px; color: #888; font-size: 0.9em;">
+                    * Interactive 3D model - Real-time rotation simulation
+                </p>
+            </div>
+        </div>
+
+        <footer>
+            <p>Data simulated based on JWST orbital mechanics | Real-time updates every 5 seconds</p>
+            <p>🌍 NASA/ESA/CSA James Webb Space Telescope - Live Mission Tracker</p>
+        </footer>
+    </div>
+
+    <script>
+        // Generate stars background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 3;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--duration', `${Math.random() * 3 + 2}s`);
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Simulate real-time telemetry data
+        function updateTelemetry() {
+            // Simulate slight variations in data
+            const distance = (1500000 + Math.sin(Date.now() / 10000) * 1000).toFixed(0);
+            const speed = (0.28 + Math.sin(Date.now() / 5000) * 0.01).toFixed(3);
+            const tempHot = (85 + Math.sin(Date.now() / 8000) * 2).toFixed(1);
+            const tempCold = (-233 + Math.sin(Date.now() / 6000) * 1).toFixed(1);
+            
+            document.getElementById('distance').textContent = `${distance} km`;
+            document.getElementById('speed').textContent = `${speed} km/s`;
+            document.getElementById('tempHot').textContent = `${tempHot}°C`;
+            document.getElementById('tempCold').textContent = `${tempCold}°C`;
+            
+            // Random instrument health checks
+            const instruments = ['Operational', 'Nominal', 'Active', 'Standby'];
+            document.getElementById('nircam').textContent = instruments[Math.floor(Math.random() * 3)];
+            document.getElementById('nirspec').textContent = instruments[Math.floor(Math.random() * 3)];
+            document.getElementById('miri').textContent = instruments[Math.floor(Math.random() * 3)];
+            document.getElementById('fgs').textContent = instruments[Math.floor(Math.random() * 3)];
+            
+            // Update timestamp
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('pt-BR');
+        }
+
+        // Update astronomical coordinates (simulated)
+        function updateCoordinates() {
+            const ra_hours = Math.floor(Math.random() * 24);
+            const ra_min = Math.floor(Math.random() * 60);
+            const ra_sec = Math.floor(Math.random() * 60);
+            document.getElementById('ra').textContent = `${ra_hours.toString().padStart(2,'0')}:${ra_min.toString().padStart(2,'0')}:${ra_sec.toString().padStart(2,'0')}`;
+            
+            const dec_sign = Math.random() > 0.5 ? '+' : '-';
+            const dec_deg = Math.floor(Math.random() * 90);
+            const dec_min = Math.floor(Math.random() * 60);
+            const dec_sec = Math.floor(Math.random() * 60);
+            document.getElementById('dec').textContent = `${dec_sign}${dec_deg}° ${dec_min}' ${dec_sec}"`;
+            
+            document.getElementById('alt').textContent = `${Math.floor(Math.random() * 90)}°`;
+            document.getElementById('az').textContent = `${Math.floor(Math.random() * 360)}°`;
+            document.getElementById('solarAngle').textContent = `${(Math.random() * 45).toFixed(1)}°`;
+        }
+
+        // Webb 3D Visualization
+        function initWebbVisualization() {
+            const canvas = document.getElementById('webbCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            function drawWebb(rotation) {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Center point
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                // Draw sunshield (hexagon shape)
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(rotation);
+                
+                // Main shield (hexagon)
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i * 60 - 30) * Math.PI / 180;
+                    const x = Math.cos(angle) * 120;
+                    const y = Math.sin(angle) * 80;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+                ctx.fill();
+                ctx.strokeStyle = '#ffd700';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Draw mirror segments (18 hexagons pattern)
+                const mirrorPositions = [
+                    [-60, -30], [-30, -30], [0, -30], [30, -30], [60, -30],
+                    [-45, 0], [-15, 0], [15, 0], [45, 0],
+                    [-60, 30], [-30, 30], [0, 30], [30, 30], [60, 30]
+                ];
+                
+                mirrorPositions.forEach(pos => {
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i * 60) * Math.PI / 180;
+                        const x = pos[0] + Math.cos(angle) * 18;
+                        const y = pos[1] + Math.sin(angle) * 15;
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.fillStyle = 'rgba(100, 100, 255, 0.8)';
+                    ctx.fill();
+                    ctx.strokeStyle = '#88aaff';
+                    ctx.stroke();
+                });
+                
+                // Draw instruments section
+                ctx.beginPath();
+                ctx.rect(-40, 70, 80, 30);
+                ctx.fillStyle = 'rgba(255, 100, 100, 0.6)';
+                ctx.fill();
+                ctx.strokeStyle = '#ff6666';
+                ctx.stroke();
+                
+                // Draw solar panels
+                ctx.fillStyle = 'rgba(100, 200, 255, 0.7)';
+                ctx.fillRect(-150, -20, 30, 40);
+                ctx.fillRect(120, -20, 30, 40);
+                
+                ctx.restore();
+                
+                // Draw rotation indicator
+                ctx.fillStyle = '#ffd700';
+                ctx.font = '12px monospace';
+                ctx.fillText(`Rotation: ${Math.floor(rotation * 180 / Math.PI)}°`, 20, 30);
+            }
+            
+            let angle = 0;
+            function animate() {
+                angle += 0.01;
+                drawWebb(angle);
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+
+        // Update data rates
+        function updateDataRate() {
+            const rate = (28.6 + Math.random() * 2 - 1).toFixed(1);
+            document.getElementById('dataRate').textContent = `${rate} Mbps`;
+        }
+
+        // Initialize all updates
+        function init() {
+            createStars();
+            initWebbVisualization();
+            updateTelemetry();
+            updateCoordinates();
+            updateDataRate();
+            
+            // Set up intervals for real-time updates
+            setInterval(() => {
+                updateTelemetry();
+                updateCoordinates();
+                updateDataRate();
+            }, 5000);
+        }
+        
+        // Start when page loads
+        window.addEventListener('load', init);
+        
+        // Handle canvas resize
+        window.addEventListener('resize', () => {
+            const canvas = document.getElementById('webbCanvas');
+            const container = canvas.parentElement;
+            canvas.width = Math.min(800, container.clientWidth - 40);
+            canvas.height = 400;
+        });
+        
+        // Trigger resize event
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 100);
+    </script>
+</body>
+</html>        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload entire repository
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
